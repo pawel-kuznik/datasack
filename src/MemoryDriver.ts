@@ -1,5 +1,7 @@
+import { Emitter, EmitterLike, EventHandler } from "@pawel-kuznik/iventy";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
+import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
 
 /**
  *  This is a driver that stores the data in-memory.
@@ -14,6 +16,7 @@ import { StorageDriver } from "./StorageDriver";
  */
 export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object = { }> implements StorageDriver<TEntry> {
     
+    private _emitter: Emitter = new Emitter();
     private _entries: { [ key: string]: TEntry } = { };
 
     async fetch(id: string): Promise<TEntry|undefined> {
@@ -42,6 +45,13 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
         this.rawUpdate(input);
     }
 
+    async delete(input: string | TEntry): Promise<void> {
+        
+        const id = typeof(input) === 'string' ? input : input.id;
+        delete this._entries[id];
+        this._emitter.trigger("remove", id);
+    }
+
     async insertCollection(input: TEntry[]): Promise<void> {
         
         input.forEach(entry => this.rawInsert(entry));
@@ -50,6 +60,29 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
     async updateCollection(input: TEntry[]): Promise<void> {
         
         input.forEach(entry => this.rawUpdate(entry));
+    }
+
+    async deleteCollection(input: TEntry[]|string[]): Promise<void> {
+
+        input.forEach(entry => this.delete(entry));
+    }
+
+    async dispose(): Promise<void> {
+        this._entries = { }; 
+    }
+
+    handle(name: string, callback: EventHandler): EventHandlerUninstaller {
+        return this._emitter.handle(name, callback);
+    }
+
+    on(name: string, callback: EventHandler): EmitterLike {
+        this._emitter.on(name, callback);
+        return this;
+    }
+
+    off(name: string, callback: EventHandler | null): EmitterLike {
+        this._emitter.off(name, callback);
+        return this;
     }
 
     protected match(entry: TEntry, filter: TFilter) : boolean {
@@ -62,6 +95,8 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
 
     private rawInsert(input: TEntry) {
         this._entries[input.id] = {...input};
+        
+        this._emitter.trigger("update", input);
     }
 
     private rawUpdate(input: TEntry) {
@@ -69,5 +104,6 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
         const payload = entry ? { ...entry, ...input } : { ...input };
 
         this._entries[input.id] = payload;
+        this._emitter.trigger("update", payload);
     }
 };

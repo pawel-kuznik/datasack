@@ -1,12 +1,19 @@
 import { v4 as uuid } from "uuid";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
+import { EmitterLike, EventHandler } from "@pawel-kuznik/iventy";
+import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
 
 /**
  *  This is a class representing a certain group of data. The elements in the group should
  *  be objects.
+ * 
+ *  @event  update  This event rises when an entry was updated (or inserted) inside the sack.
+ *                  The data will contain the whole entry.
+ *  @event  remove  This event rises when an entry was removed from the sack. The data
+ *                  will contain an id with the removed entry.
  */
-export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> {
+export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> implements EmitterLike {
 
     private _storage: StorageDriver<TEntry>;
 
@@ -83,5 +90,25 @@ export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> {
             if (options.mode === 'replace') return this._storage.insert(input);
             return this._storage.update(input);
         }
+    }
+
+    async delete(input: TEntry|TEntry[]|string|string[]) {
+
+        if (Array.isArray(input)) return this._storage.deleteCollection(input);
+        else this._storage.delete(input);
+    }
+
+    handle(name: string, callback: EventHandler): EventHandlerUninstaller {
+        return this._storage.handle(name, callback);
+    }
+
+    on(name: string, callback: EventHandler): EmitterLike {
+        this._storage.on(name, callback);
+        return this;
+    }
+
+    off(name: string, callback: EventHandler | null): EmitterLike {
+        this._storage.off(name, callback);
+        return this;
     }
 };
