@@ -12,8 +12,8 @@ import { StorageDriver } from "./StorageDriver";
  *  will ensure that data returned from the driver is a new instance of data.
  *  With in-memory driver, we don't have this feature.
  */
-export class MemoryDriver<TEntry extends Entry = Entry> implements StorageDriver<TEntry> {
-
+export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object = { }> implements StorageDriver<TEntry> {
+    
     private _entries: { [ key: string]: TEntry } = { };
 
     async fetch(id: string): Promise<TEntry|undefined> {
@@ -24,19 +24,50 @@ export class MemoryDriver<TEntry extends Entry = Entry> implements StorageDriver
 
     async insert(input: TEntry): Promise<void> {
 
-        this._entries[input.id] = {...input};
+        this.rawInsert(input);
         return Promise.resolve();
     }
 
-    async update(input: TEntry): Promise<void> {
-        
-        const entry = this.get(input.id);
-        const payload = entry ? { ...entry, ...input } : { ...input };
+    async find(filter?: TFilter) : Promise<TEntry[]> {
 
-        this._entries[input.id] = payload;
+        const entries = filter ? Object.values(this._entries).filter(entry => this.match(entry, filter)) : Object.values(this._entries);
+
+        return Promise.resolve(entries.map(entry => {
+            return {...entry};
+        }));
+    }
+
+    async update(input: TEntry): Promise<void> {
+
+        this.rawUpdate(input);
+    }
+
+    async insertCollection(input: TEntry[]): Promise<void> {
+        
+        input.forEach(entry => this.rawInsert(entry));
+    }
+
+    async updateCollection(input: TEntry[]): Promise<void> {
+        
+        input.forEach(entry => this.rawUpdate(entry));
+    }
+
+    protected match(entry: TEntry, filter: TFilter) : boolean {
+        return true;
     }
 
     private get(id: string) : TEntry|undefined {
         return this._entries[id];
+    }
+
+    private rawInsert(input: TEntry) {
+        this._entries[input.id] = {...input};
+    }
+
+    private rawUpdate(input: TEntry) {
+        const entry = this.get(input.id);
+        const payload = entry ? { ...entry, ...input } : { ...input };
+
+        this._entries[input.id] = payload;
     }
 };

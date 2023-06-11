@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
 
@@ -5,7 +6,7 @@ import { StorageDriver } from "./StorageDriver";
  *  This is a class representing a certain group of data. The elements in the group should
  *  be objects.
  */
-export class Sack<TEntry extends Entry = Entry> {
+export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> {
 
     private _storage: StorageDriver<TEntry>;
 
@@ -18,7 +19,18 @@ export class Sack<TEntry extends Entry = Entry> {
      *  be ready to be used.
      */
     async prepare() : Promise<TEntry> {
-        return Promise.resolve({ id: 'test' } as TEntry);
+        return Promise.resolve({ id: uuid() } as TEntry);
+    }
+
+    /**
+     *  Create a new entry in the sack. The entry will be stored before returned.
+     */
+    async create() : Promise<TEntry> {
+
+        const payload = await this.prepare();
+        await this.store(payload, { mode: "replace" });
+
+        return payload;
     }
 
     /**
@@ -33,11 +45,43 @@ export class Sack<TEntry extends Entry = Entry> {
     }
 
     /**
-     *  Store a specific entry.
+     *  Find entries matching a specific filter or all items as they are.
      */
-    async store(input: TEntry, options: { mode: "replace" | "update" } = { mode: "replace" }) : Promise<void> {
+    async find(filter?: TFilter) {
 
-        if (options.mode === 'replace') return this._storage.insert(input);
-        return this._storage.update(input);
+        return this._storage.find(filter);
+    }
+
+    /**
+     *  Update or insert an entry.
+     */
+    async upsert(input: TEntry|TEntry[]) : Promise<void> {
+
+        return this.store(input, { mode: "update" });
+    }
+
+    /**
+     *  Insert an entry.
+     */
+    async insert(input: TEntry|TEntry[]) : Promise<void> {
+
+        this.store(input, { mode: "replace" });
+    }
+
+    /**
+     *  Store a specific entry or a collection of entries.
+     */
+    async store(input: TEntry|TEntry[], options: { mode: "replace" | "update" } = { mode: "replace" }) : Promise<void> {
+
+        if (Array.isArray(input)) {
+
+            if (options.mode === 'replace') return this._storage.insertCollection(input);
+            return this._storage.updateCollection(input);
+        }
+
+        else {
+            if (options.mode === 'replace') return this._storage.insert(input);
+            return this._storage.update(input);
+        }
     }
 };

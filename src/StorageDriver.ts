@@ -6,7 +6,7 @@ import { Entry } from "./Entry";
  *  implemented, but concrete enough that it can be used by the Sack class
  *  to fulfill all data needs. 
  */
-export interface StorageDriver<TEntry extends Entry = Entry> {
+export interface StorageDriver<TEntry extends Entry = Entry, TFilter extends object = { }> {
 
     /**
      *  Fetch a copy of the entry stored in the storage driver.
@@ -19,6 +19,11 @@ export interface StorageDriver<TEntry extends Entry = Entry> {
      *  one.
      */
     insert(input: TEntry): Promise<void>;
+
+    /**
+     *  Find a set of entries. 
+     */
+    find(filter?: TFilter) : Promise<TEntry[]>;
     
     /**
      *  Update an entry in the storage driver. The update should be
@@ -28,4 +33,14 @@ export interface StorageDriver<TEntry extends Entry = Entry> {
      *  be inserted into the storage.
      */
     update(input: TEntry): Promise<void>;
+
+    /**
+     *  Insert a collection of items.
+     */
+    insertCollection(input: TEntry[]) : Promise<void>;
+
+    /**
+     *  Update a collection of items.
+     */
+    updateCollection(input: TEntry[]) : Promise<void>;
 };
