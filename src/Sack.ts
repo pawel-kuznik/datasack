@@ -20,7 +20,7 @@ export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> imp
     constructor(driver: StorageDriver<TEntry>) {
         this._storage = driver;
     }
-
+      
     /**
      *  Prepare a new entry. This entry will not be automatically stored, but it will
      *  be ready to be used.
@@ -54,7 +54,7 @@ export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> imp
     /**
      *  Find entries matching a specific filter or all items as they are.
      */
-    async find(filter?: TFilter) {
+    async find(filter?: TFilter) : Promise<TEntry[]> {
 
         return this._storage.find(filter);
     }
