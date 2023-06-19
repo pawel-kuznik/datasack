@@ -1,9 +1,9 @@
 import { EventHandler, EmitterLike, Emitter } from "@pawel-kuznik/iventy";
 import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
-import { Collection } from "./CollectionPotential";
+import { CollectionPotential } from "./CollectionPotential";
 import { Entry } from "./Entry";
 
-export class MemoryCollection<TEntry extends Entry = Entry> implements Collection<TEntry> {
+export class MemoryCollection<TEntry extends Entry = Entry> implements CollectionPotential<TEntry> {
 
     private _fetch: () => Promise<TEntry[]>;
     private _match: (entry: TEntry) => boolean;

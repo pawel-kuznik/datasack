@@ -1,7 +1,7 @@
 import { Emitter } from "@pawel-kuznik/iventy";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
-import { Collection } from "./CollectionPotential";
+import { CollectionPotential } from "./CollectionPotential";
 import { MemoryCollection } from "./MemoryCollection";
 
 /**
@@ -72,7 +72,7 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
         this._entries = { }; 
     }
 
-    async fetchCollection(filter?: TFilter | undefined): Promise<Collection<TEntry>> {
+    collection(filter?: TFilter | undefined): CollectionPotential<TEntry> {
         
         return new MemoryCollection(() => this.find(filter), this._emitter, (entry: TEntry) => {
             return this.match(entry, filter || { } as TFilter);

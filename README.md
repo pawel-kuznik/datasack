@@ -21,3 +21,6 @@ and is rather fragile.
 ones that insisnt on supporting old Interner Explorer browsers.
 
 This library is here to provide an easy way to deal with the these issues.
+
+
+@TODO explain the concept of potentials.
