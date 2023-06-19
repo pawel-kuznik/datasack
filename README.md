@@ -22,5 +22,57 @@ ones that insisnt on supporting old Interner Explorer browsers.
 
 This library is here to provide an easy way to deal with the these issues.
 
+## Sacks
+
+The consumer part of the library is a Sack. These objects are facades over the storage driver and
+allow for high level of abstraction from the actual storage level. This allows to build your data
+model in a way that you can share code in the client, server, electron app, or cli. This also allows
+for easy test setup and inspection of results, as the tests would hold the total control over the
+raw data.
+
+To define a stack:
+```
+import { Entry, Sack } from "@pawel-kuznik/datasack";
+
+interface Person extends  {
+    name: string;
+};
+
+// construct your persons sack
+const persons = new Sack<Person>(new YourStorageOfChoice());
+
+// insert alice and bob
+await persons.insert({ id: "alice-id", name: "Alice" });
+await persons.insert({ id: "bob-id", name: "Bob" });
+
+// fetch alice object
+const alice = persons.fetch("alice-id");
+```
+
+The above example works well with POJOs. However, sometimes there is a need to work with class-based
+entries. For such, there is a helper class: `ConvertingDriver`. This class allows for converting data
+from and to ready and storage formats.
+
+```
+import { Entry, ConvertingDriver, Sack } from "@pawel-kuznik/datasack";
+
+interface PersonData extends Entry {
+    name: string;
+};
+
+class Person implements Entry {
+    
+};
+
+class PersonsDriver extends ConvertingDriver<Person, PersonData> {
+
+};
+```
+
+## Potentials
+
+The library operates on a concept of potentials for the storage implementations. These objects describe
+a potential entry or a collection. In simple words: they are wrappers of entries and collections allowing
+to defer actions on the actual data.
 
 @TODO explain the concept of potentials.
