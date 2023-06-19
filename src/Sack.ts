@@ -1,8 +1,6 @@
 import { v4 as uuid } from "uuid";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
-import { EmitterLike, EventHandler } from "@pawel-kuznik/iventy";
-import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
 
 /**
  *  This is a class representing a certain group of data. The elements in the group should
@@ -13,7 +11,7 @@ import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel"
  *  @event  remove  This event rises when an entry was removed from the sack. The data
  *                  will contain an id with the removed entry.
  */
-export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> implements EmitterLike {
+export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> {
 
     private _storage: StorageDriver<TEntry>;
 
@@ -96,19 +94,5 @@ export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> imp
 
         if (Array.isArray(input)) return this._storage.deleteCollection(input);
         else this._storage.delete(input);
-    }
-
-    handle(name: string, callback: EventHandler): EventHandlerUninstaller {
-        return this._storage.handle(name, callback);
-    }
-
-    on(name: string, callback: EventHandler): EmitterLike {
-        this._storage.on(name, callback);
-        return this;
-    }
-
-    off(name: string, callback: EventHandler | null): EmitterLike {
-        this._storage.off(name, callback);
-        return this;
     }
 };

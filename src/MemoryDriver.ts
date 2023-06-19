@@ -1,7 +1,8 @@
-import { Emitter, EmitterLike, EventHandler } from "@pawel-kuznik/iventy";
+import { Emitter } from "@pawel-kuznik/iventy";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
-import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
+import { Collection } from "./CollectionPotential";
+import { MemoryCollection } from "./MemoryCollection";
 
 /**
  *  This is a driver that stores the data in-memory.
@@ -71,21 +72,25 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
         this._entries = { }; 
     }
 
-    handle(name: string, callback: EventHandler): EventHandlerUninstaller {
-        return this._emitter.handle(name, callback);
-    }
-
-    on(name: string, callback: EventHandler): EmitterLike {
-        this._emitter.on(name, callback);
-        return this;
-    }
-
-    off(name: string, callback: EventHandler | null): EmitterLike {
-        this._emitter.off(name, callback);
-        return this;
+    async fetchCollection(filter?: TFilter | undefined): Promise<Collection<TEntry>> {
+        
+        return new MemoryCollection(() => this.find(filter), this._emitter, (entry: TEntry) => {
+            return this.match(entry, filter || { } as TFilter);
+        });
     }
 
     protected match(entry: TEntry, filter: TFilter) : boolean {
+        
+        for(let prop in filter) {
+
+            if (!(prop in entry)) return false;
+             
+            // we cast as any cause the above line essentially checks if the prop
+            // exists on an entry, but TypeScript has issues with types around this
+            // logic.
+            if ((entry as any)[prop] !== filter[prop]) return false;
+        }
+
         return true;
     }
 

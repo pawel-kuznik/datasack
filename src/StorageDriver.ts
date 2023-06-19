@@ -1,4 +1,4 @@
-import { EmitterLike } from "@pawel-kuznik/iventy";
+import { Collection } from "./CollectionPotential";
 import { Entry } from "./Entry";
 
 /**
@@ -7,7 +7,7 @@ import { Entry } from "./Entry";
  *  implemented, but concrete enough that it can be used by the Sack class
  *  to fulfill all data needs. 
  */
-export interface StorageDriver<TEntry extends Entry = Entry, TFilter extends object = { }> extends EmitterLike {
+export interface StorageDriver<TEntry extends Entry = Entry, TFilter extends object = { }> {
 
     /**
      *  Fetch a copy of the entry stored in the storage driver.
@@ -54,6 +54,11 @@ export interface StorageDriver<TEntry extends Entry = Entry, TFilter extends obj
      *  Remove a collection of items.
      */
     deleteCollection(input: TEntry[]|string[]) : Promise<void>;
+
+    /**
+     *  Fetch a collection with a specific filter.
+     */
+    fetchCollection(filter? : TFilter) : Promise<Collection<TEntry>>;
 
     /**
      *  Dispose of any data or connection.
