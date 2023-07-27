@@ -59,12 +59,14 @@ describe('ConvertingDriver', () => {
         expect(fetched?.name).toEqual("name-1");
     });
 
-    it('should trigger update event with an instance', done => {
+    it('entry potential should trigger on update', done => {
 
         const impl = new MemoryDriver<FooData>();
         const driver = new FooDriver(impl);
 
-        driver.on('update', event => {
+        const entryPotential = driver.getEntryPotential("test-1");
+
+        entryPotential.on('update', event => {
 
             expect(event.data instanceof Foo).toBeTruthy();
             expect(event.data.id).toEqual("test-1");
@@ -78,14 +80,16 @@ describe('ConvertingDriver', () => {
         driver.insert(instance);
     });
 
-    it('should trigger delete event with id', done => {
+    it('entry potential should trigger delete event with id', done => {
 
         const impl = new MemoryDriver<FooData>();
         const driver = new FooDriver(impl);
 
-        driver.on('remove', event => {
+        const entryPotential = driver.getEntryPotential("test-1");
 
-            expect(event.data).toEqual("test-1");
+        entryPotential.on('delete', event => {
+
+            expect(event.data.id).toEqual("test-1");
 
             done();
         });

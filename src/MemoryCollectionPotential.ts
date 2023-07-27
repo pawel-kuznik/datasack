@@ -3,7 +3,7 @@ import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel"
 import { CollectionPotential } from "./CollectionPotential";
 import { Entry } from "./Entry";
 
-export class MemoryCollection<TEntry extends Entry = Entry> implements CollectionPotential<TEntry> {
+export class MemoryCollectionPotential<TEntry extends Entry = Entry> implements CollectionPotential<TEntry> {
 
     private _fetch: () => Promise<TEntry[]>;
     private _match: (entry: TEntry) => boolean;
@@ -22,10 +22,10 @@ export class MemoryCollection<TEntry extends Entry = Entry> implements Collectio
             if (this._match(data)) this._emitter.trigger("update", data);
         });
 
-        this._outsideEmitter.on('remove', event => {
+        this._outsideEmitter.on('delete', event => {
             
             const data = event.data as TEntry;
-            if (this._match(data)) this._emitter.trigger("remove", data);
+            if (this._match(data)) this._emitter.trigger("delete", data);
         });
     }
 

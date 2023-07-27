@@ -1,5 +1,6 @@
-import { Collection } from "./CollectionPotential";
+import { CollectionPotential } from "./CollectionPotential";
 import { Entry } from "./Entry";
+import { EntryPotential } from "./EntryPotential";
 
 /**
  *  This is an interface describing how a storage driver should behave.
@@ -56,9 +57,14 @@ export interface StorageDriver<TEntry extends Entry = Entry, TFilter extends obj
     deleteCollection(input: TEntry[]|string[]) : Promise<void>;
 
     /**
-     *  Fetch a collection with a specific filter.
+     *  Get a potential of a specific entry. 
      */
-    fetchCollection(filter? : TFilter) : Promise<Collection<TEntry>>;
+    getEntryPotential(id: string) : EntryPotential<TEntry>;
+
+    /**
+     *  Get a potential of a collection of entries. 
+     */
+    getCollectionPotential(filter? : TFilter) : CollectionPotential<TEntry>;
 
     /**
      *  Dispose of any data or connection.

@@ -95,4 +95,14 @@ export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> {
         if (Array.isArray(input)) return this._storage.deleteCollection(input);
         else this._storage.delete(input);
     }
+
+    getEntryPotential(id: string) {
+
+        return this._storage.getEntryPotential(id);
+    }
+
+    getCollectionPotential(filter?: TFilter) {
+        
+        return this._storage.getCollectionPotential(filter);
+    }
 };

@@ -2,7 +2,9 @@ import { Emitter } from "@pawel-kuznik/iventy";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
 import { CollectionPotential } from "./CollectionPotential";
-import { MemoryCollection } from "./MemoryCollection";
+import { MemoryCollectionPotential } from "./MemoryCollectionPotential";
+import { EntryPotential } from "./EntryPotential";
+import { MemoryEntryPotential } from "./MemoryEntryPotential";
 
 /**
  *  This is a driver that stores the data in-memory.
@@ -49,8 +51,9 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
     async delete(input: string | TEntry): Promise<void> {
         
         const id = typeof(input) === 'string' ? input : input.id;
+        const entry = this._entries[id];
         delete this._entries[id];
-        this._emitter.trigger("remove", id);
+        this._emitter.trigger("delete", entry);
     }
 
     async insertCollection(input: TEntry[]): Promise<void> {
@@ -74,9 +77,27 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
 
     collection(filter?: TFilter | undefined): CollectionPotential<TEntry> {
         
-        return new MemoryCollection(() => this.find(filter), this._emitter, (entry: TEntry) => {
+        return new MemoryCollectionPotential(() => this.find(filter), this._emitter, (entry: TEntry) => {
             return this.match(entry, filter || { } as TFilter);
         });
+    }
+
+    getEntryPotential(id: string): EntryPotential<TEntry> {
+        return new MemoryEntryPotential(
+            () => this.fetch(id),
+            (update: TEntry) => this.update(update),
+            () => this.delete(id),
+            this._emitter,
+            (test: TEntry|string) => typeof(test) === "string" ? test === id : test.id === id
+        );
+    }
+
+    getCollectionPotential(filter?: TFilter | undefined): CollectionPotential<TEntry> {
+        return new MemoryCollectionPotential(
+            () => this.find(filter),
+            this._emitter,
+            (test: TEntry) => this.match(test, (filter || { }) as TFilter)
+        )
     }
 
     protected match(entry: TEntry, filter: TFilter) : boolean {

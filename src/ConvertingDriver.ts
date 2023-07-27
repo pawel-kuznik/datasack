@@ -2,6 +2,10 @@ import { EventHandler, EmitterLike, Emitter } from "@pawel-kuznik/iventy";
 import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
+import { CollectionPotential } from "./CollectionPotential";
+import { EntryPotential } from "./EntryPotential";
+import { ConvertingEntryPotential } from "./ConvertingEntryPotential";
+import { ConvertingCollectionPotential } from "./ConvertingCollectionPotential";
 
 /**
  *  This is a driver that can wrap over another driver to convert
@@ -13,20 +17,8 @@ export abstract class ConvertingDriver<TEntry extends Entry = Entry, TData exten
 
     private _storage: StorageDriver<TData, TFilter>;
 
-    private _emitter: Emitter = new Emitter();
-
     constructor(storage: StorageDriver<TData, TFilter>) {
         this._storage = storage;
-
-        this._storage.on('remove', event => {
-            this._emitter.trigger('remove', event.data);
-        });
-
-        this._storage.on('update', async event => {
-
-            const payload = await this.wrap(event.data);
-            this._emitter.trigger('update', payload);
-        });
     }
 
     abstract wrap(input: TData) : Promise<TEntry>;
@@ -89,23 +81,35 @@ export abstract class ConvertingDriver<TEntry extends Entry = Entry, TData exten
         }
     }
 
+    /**
+     *  Get a potential of an entry.
+     */
+    getEntryPotential(id: string): EntryPotential<TEntry> {
+        
+        const dataPotential = this._storage.getEntryPotential(id);
+        return new ConvertingEntryPotential<TEntry, TData>(
+            dataPotential,
+            (data: TData) => this.wrap(data),
+            (entry: TEntry) => this.process(entry)
+        ); 
+    }
+
+    /**
+     *  Get a potential of a collection of an entry.
+     */
+    getCollectionPotential(filter?: TFilter | undefined): CollectionPotential<TEntry> {
+        
+        const dataCollection = this._storage.getCollectionPotential(filter);
+        return new ConvertingCollectionPotential<TEntry, TData>(
+            dataCollection,
+            (data: TData) => this.wrap(data),
+            (entry: TEntry) => this.process(entry)
+        );
+    }
+
     async dispose(): Promise<void> {
 
         // @todo should the converting driver dispose of the passed driver?
         return this._storage.dispose();
     }
-
-    handle(name: string, callback: EventHandler): EventHandlerUninstaller {
-        return this._emitter.handle(name, callback);
-    }
-
-    on(name: string, callback: EventHandler): EmitterLike {
-        this._emitter.on(name, callback);
-        return this;
-    }
-    
-    off(name: string, callback: EventHandler | null): EmitterLike {
-        this._emitter.off(name, callback);
-        return this;
-    } 
 };
