@@ -101,4 +101,71 @@ describe('ConvertingDriver', () => {
         });
     });
 
+    it('collection potential should trigger an update event', done => {
+
+        const impl = new MemoryDriver<FooData>();
+        const driver = new FooDriver(impl);
+
+        const collectionPotential = driver.getCollectionPotential();
+
+        collectionPotential.on('update', event => {
+
+            expect(event.data instanceof Foo).toBeTruthy();
+            expect(event.data.id).toEqual("test-1");
+            expect(event.data.name).toEqual("name-1");
+
+            done();
+        });
+
+        const instance = new Foo({ id: "test-1", name: "name-1" });
+
+        driver.insert(instance);
+    });
+
+    it('collection potential should trigger an update event only for matching entry', done => {
+
+        const impl = new MemoryDriver<FooData>();
+        const driver = new FooDriver(impl);
+
+        const collectionPotential = driver.getCollectionPotential({ name: "name-1" });
+
+        collectionPotential.on('update', event => {
+
+            expect(event.data instanceof Foo).toBeTruthy();
+            expect(event.data.id).toEqual("test-1");
+            expect(event.data.name).toEqual("name-1");
+
+            done();
+        });
+
+        const wrong = new Foo({ id: "test-0", name: "wrong-name" });
+        const instance = new Foo({ id: "test-1", name: "name-1" });
+
+        driver.insert(wrong).then(() => {
+
+            driver.insert(instance);
+        });
+    });
+
+    it('entry potential should trigger delete event with id', done => {
+
+        const impl = new MemoryDriver<FooData>();
+        const driver = new FooDriver(impl);
+
+        const collectionPotential = driver.getCollectionPotential();
+
+        collectionPotential.on('delete', event => {
+
+            expect(event.data.id).toEqual("test-1");
+
+            done();
+        });
+
+        const instance = new Foo({ id: "test-1", name: "name-1" });
+
+        driver.insert(instance).then(() => {
+            driver.delete(instance);
+        });
+    });
+
 });
