@@ -142,7 +142,6 @@ describe('ConvertingDriver', () => {
         const instance = new Foo({ id: "test-1", name: "name-1" });
 
         driver.insert(wrong).then(() => {
-
             driver.insert(instance);
         });
     });

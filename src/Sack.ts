@@ -1,6 +1,8 @@
 import { v4 as uuid } from "uuid";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
+import { EntryPotential } from "./EntryPotential";
+import { CollectionPotential } from "./CollectionPotential";
 
 /**
  *  This is a class representing a certain group of data. The elements in the group should
@@ -96,12 +98,12 @@ export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> {
         else this._storage.delete(input);
     }
 
-    getEntryPotential(id: string) {
+    getEntryPotential(id: string) : EntryPotential<TEntry> {
 
         return this._storage.getEntryPotential(id);
     }
 
-    getCollectionPotential(filter?: TFilter) {
+    getCollectionPotential(filter?: TFilter) : CollectionPotential<TEntry> {
         
         return this._storage.getCollectionPotential(filter);
     }

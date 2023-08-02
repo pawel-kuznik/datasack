@@ -1,5 +1,3 @@
-import { EventHandler, EmitterLike, Emitter } from "@pawel-kuznik/iventy";
-import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
 import { CollectionPotential } from "./CollectionPotential";
