@@ -75,31 +75,4 @@ describe("Sack", () => {
         const fetched = await sack.fetch(payload.id);
         expect(fetched.name).toEqual("Test");
     });
-
-    it('should inform about changes', async () => {
-
-        const sack = new Sack(new MemoryDriver());
-
-        const callback = jest.fn();
-        sack.on("update", callback);
-
-        const payload1 = await sack.prepare();
-        await sack.store(payload1);
-
-        expect(callback).toBeCalled();
-    });
-
-    it('should inform about removals', async () => {
-
-        const sack = new Sack(new MemoryDriver());
-
-        const callback = jest.fn();
-        sack.on("remove", callback);
-
-        const payload1 = await sack.prepare();
-        await sack.store(payload1);
-        await sack.delete(payload1.id);
-
-        expect(callback).toBeCalled();
-    });
 });

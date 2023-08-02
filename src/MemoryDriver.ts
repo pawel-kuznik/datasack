@@ -1,7 +1,10 @@
-import { Emitter, EmitterLike, EventHandler } from "@pawel-kuznik/iventy";
+import { Emitter } from "@pawel-kuznik/iventy";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
-import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
+import { CollectionPotential } from "./CollectionPotential";
+import { MemoryCollectionPotential } from "./MemoryCollectionPotential";
+import { EntryPotential } from "./EntryPotential";
+import { MemoryEntryPotential } from "./MemoryEntryPotential";
 
 /**
  *  This is a driver that stores the data in-memory.
@@ -48,8 +51,9 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
     async delete(input: string | TEntry): Promise<void> {
         
         const id = typeof(input) === 'string' ? input : input.id;
+        const entry = this._entries[id];
         delete this._entries[id];
-        this._emitter.trigger("remove", id);
+        this._emitter.trigger("delete", entry);
     }
 
     async insertCollection(input: TEntry[]): Promise<void> {
@@ -71,21 +75,43 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
         this._entries = { }; 
     }
 
-    handle(name: string, callback: EventHandler): EventHandlerUninstaller {
-        return this._emitter.handle(name, callback);
+    collection(filter?: TFilter | undefined): CollectionPotential<TEntry> {
+        
+        return new MemoryCollectionPotential(() => this.find(filter), this._emitter, (entry: TEntry) => {
+            return this.match(entry, filter || { } as TFilter);
+        });
     }
 
-    on(name: string, callback: EventHandler): EmitterLike {
-        this._emitter.on(name, callback);
-        return this;
+    getEntryPotential(id: string): EntryPotential<TEntry> {
+        return new MemoryEntryPotential(
+            () => this.fetch(id),
+            (update: TEntry) => this.update(update),
+            () => this.delete(id),
+            this._emitter,
+            (test: TEntry|string) => typeof(test) === "string" ? test === id : test.id === id
+        );
     }
 
-    off(name: string, callback: EventHandler | null): EmitterLike {
-        this._emitter.off(name, callback);
-        return this;
+    getCollectionPotential(filter?: TFilter | undefined): CollectionPotential<TEntry> {
+        return new MemoryCollectionPotential(
+            () => this.find(filter),
+            this._emitter,
+            (test: TEntry) => this.match(test, (filter || { }) as TFilter)
+        )
     }
 
     protected match(entry: TEntry, filter: TFilter) : boolean {
+        
+        for(let prop in filter) {
+
+            if (!(prop in entry)) return false;
+             
+            // we cast as any cause the above line essentially checks if the prop
+            // exists on an entry, but TypeScript has issues with types around this
+            // logic.
+            if ((entry as any)[prop] !== filter[prop]) return false;
+        }
+
         return true;
     }
 
