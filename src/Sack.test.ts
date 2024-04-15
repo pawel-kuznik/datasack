@@ -50,6 +50,21 @@ describe("Sack", () => {
         expect(items).toHaveLength(2);
     });
 
+    it('should fetch a collection of items based on a specific filter', async () => {
+        
+        const sack = new Sack<{ id: string; foo: string}>(new MemoryDriver());
+        const payloadA = await sack.prepare();
+        payloadA.foo = "a";
+        const payloadB = await sack.prepare();
+        payloadB.foo = "b";
+
+        await sack.store([payloadA, payloadB]);
+
+        const items = await sack.find({ foo: "a" });
+
+        expect(items).toHaveLength(1);
+    });
+
     it('should prepare new entry with an id ready to go', async () => {
 
         const sack = new Sack(new MemoryDriver());
