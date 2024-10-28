@@ -3,6 +3,11 @@ import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel"
 import { CollectionPotential } from "./CollectionPotential";
 import { Entry } from "./Entry";
 
+/**
+ *  This is an implementation of the collection potential for converting driver.
+ *  Essentially, it will make sure that we have a collection potential that is
+ *  able to serve converted entities.
+ */
 export class ConvertingCollectionPotential<TEntry extends Entry = Entry, TData extends Entry = Entry> implements CollectionPotential<TEntry> {
 
     private _collection: CollectionPotential<TData>;

@@ -1,5 +1,6 @@
 import { ConvertingDriver } from "./ConvertingDriver";
 import { Entry } from "./Entry";
+import { EntryCache } from "./EntryCache";
 import { MemoryDriver } from "./MemoryDriver";
 
 describe('ConvertingDriver', () => {
@@ -167,4 +168,137 @@ describe('ConvertingDriver', () => {
         });
     });
 
+    it('should create new entities when no cache is specified', async () => {
+
+        // @note
+        // Don't use .toBe(), .toEqual(), or .toStrictEqual(). jest is making super
+        // confusing to compare objects that should be the same. For some reason .toEqual
+        // is not really equal but deep equal, toBe is not really Object.is but falls
+        // back on string conversion equality, and toStrictEqual does the deep equal again.
+        // Why??  
+
+        const impl = new MemoryDriver<FooData>();
+        const driver = new FooDriver(impl);
+
+        const foo = new Foo({ id: 'test-1', name: "name-1" });
+
+        await driver.insert(foo);
+
+        const fetched = await driver.fetch('test-1');
+
+        expect(foo.id).toEqual(fetched?.id);
+        expect(foo === fetched).not.toEqual(true);
+    });
+
+    it('should use the cached entity', async () => {
+
+        // @note
+        // Don't use .toBe(), .toEqual(), or .toStrictEqual(). jest is making super
+        // confusing to compare objects that should be the same. For some reason .toEqual
+        // is not really equal but deep equal, toBe is not really Object.is but falls
+        // back on string conversion equality, and toStrictEqual does the deep equal again.
+        // Why??  
+
+        const cache = new EntryCache<Foo>();
+        const impl = new MemoryDriver<FooData>();
+        const driver = new FooDriver(impl, cache);
+
+        const foo1 = new Foo({ id: 'test-1', name: "name-1" });
+        const foo2 = new Foo({ id: 'test-2', name: "name-2" });
+
+        await driver.insert(foo1);
+        await driver.insert(foo2);
+        
+        const fetched1 = await driver.fetch('test-1');
+        
+        const newFoo2 = new Foo({ id: 'test-2', name: "name-2" });
+        await driver.update(newFoo2);
+
+        const fetched2 = await driver.fetch('test-2');
+
+        expect(foo1.id).toEqual(fetched1?.id);
+        expect(foo1 == fetched1).toEqual(true);
+
+        expect(newFoo2.id).toEqual(fetched2?.id);
+        expect(newFoo2 == fetched2).toEqual(true);
+
+        await driver.delete('test-1');
+
+        const afterDeleteFoo1 = await driver.fetch('test-1');
+        expect(afterDeleteFoo1).toEqual(undefined);
+    });
+
+    it('should use the cached entity (collection operations)', async () => {
+
+        // @note
+        // Don't use .toBe(), .toEqual(), or .toStrictEqual(). jest is making super
+        // confusing to compare objects that should be the same. For some reason .toEqual
+        // is not really equal but deep equal, toBe is not really Object.is but falls
+        // back on string conversion equality, and toStrictEqual does the deep equal again.
+        // Why??  
+
+        const cache = new EntryCache<Foo>();
+        const impl = new MemoryDriver<FooData>();
+        const driver = new FooDriver(impl, cache);
+
+        const foo1 = new Foo({ id: 'test-1', name: "name-1" });
+        const foo2 = new Foo({ id: 'test-2', name: "name-2" });
+
+        const collection = [ foo1, foo2 ];
+
+        await driver.insertCollection(collection);
+        
+        const fetched1 = await driver.fetch('test-1');
+        
+        const newFoo2 = new Foo({ id: 'test-2', name: "name-2" });
+        await driver.updateCollection([ newFoo2 ]);
+
+        const fetched2 = await driver.fetch('test-2');
+
+        expect(foo1.id).toEqual(fetched1?.id);
+        expect(foo1 == fetched1).toEqual(true);
+
+        expect(newFoo2.id).toEqual(fetched2?.id);
+        expect(newFoo2 == fetched2).toEqual(true);
+
+        await driver.deleteCollection([ foo1]);
+
+        const afterDeleteFoo1 = await driver.fetch('test-1');
+        expect(afterDeleteFoo1).toEqual(undefined);
+    });
+
+    it('should use the cached entity (potentials)', async () => {
+
+        // @note
+        // Don't use .toBe(), .toEqual(), or .toStrictEqual(). jest is making super
+        // confusing to compare objects that should be the same. For some reason .toEqual
+        // is not really equal but deep equal, toBe is not really Object.is but falls
+        // back on string conversion equality, and toStrictEqual does the deep equal again.
+        // Why??  
+
+        const cache = new EntryCache<Foo>();
+        const impl = new MemoryDriver<FooData>();
+        const driver = new FooDriver(impl, cache);
+
+        const foo1 = new Foo({ id: 'test-1', name: "name-1" });
+        const foo2 = new Foo({ id: 'test-2', name: "name-2" });
+
+        const collection = [ foo1, foo2 ];
+
+        await driver.insertCollection(collection);
+        
+        const collectionPotential = driver.getCollectionPotential();
+
+        const fetchedCollection = await collectionPotential.all();
+        const fetched1 = fetchedCollection.find(v => v.id === "test-1");
+
+        expect(foo1.id).toEqual(fetched1?.id);
+        expect(foo1 == fetched1).toEqual(true);
+
+        const foo1Potential = driver.getEntryPotential('test-1');
+        const singlarFoo1Fetched = await foo1Potential.fetch();
+
+        expect(foo1.id).toEqual(singlarFoo1Fetched?.id);
+        expect(foo1 == singlarFoo1Fetched).toEqual(true);
+    });
 });

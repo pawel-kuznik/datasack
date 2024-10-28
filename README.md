@@ -72,7 +72,8 @@ class PersonsDriver extends ConvertingDriver<Person, PersonData> {
 ## Potentials
 
 The library operates on a concept of potentials for the storage implementations. These objects describe
-a potential entry or a collection. In simple words: they are wrappers of entries and collections allowing
-to defer actions on the actual data.
+a potential of entry or a collection. The object allows for access to the actual entry or collection 
+updates when the underlying entry or collection changes.
 
-@TODO explain the concept of potentials.
+The potential is mostly useful when dealing with react framework. Potentials can be passed around
+as properties and then used by componets to read the data.
