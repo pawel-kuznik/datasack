@@ -11,6 +11,11 @@ import { EntryCache } from "./EntryCache";
  *  between a user-space entry and a backend-specific data. Mainly,
  *  it is useful when dealing with classes in user space and with
  *  POJOs in the backend side.
+ * 
+ *  Note that creating instances of classes might be computationally
+ *  expensive. If that's the case it's advised to pass a cache instance
+ *  to the driver so that fetching instances of entries will not cause
+ *  an additional instance construction.
  */
 export abstract class ConvertingDriver<TEntry extends Entry = Entry, TData extends Entry = Entry, TFilter extends object = { }>
     implements StorageDriver<TEntry, TFilter>
