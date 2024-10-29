@@ -1,10 +1,14 @@
-import { Emitter } from "@pawel-kuznik/iventy";
+import { Emitter, EmitterLike, EventHandler } from "@pawel-kuznik/iventy";
 import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
 import { CollectionPotential } from "./CollectionPotential";
 import { MemoryCollectionPotential } from "./MemoryCollectionPotential";
 import { EntryPotential } from "./EntryPotential";
 import { MemoryEntryPotential } from "./MemoryEntryPotential";
+import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
+import { isEqual } from "lodash";
+import { UpdateEventPayload } from "./UpdateEventPayload";
+import { DeleteEventPayload } from "./DeleteEventPayload";
 
 /**
  *  This is a driver that stores the data in-memory.
@@ -17,10 +21,25 @@ import { MemoryEntryPotential } from "./MemoryEntryPotential";
  *  will ensure that data returned from the driver is a new instance of data.
  *  With in-memory driver, we don't have this feature.
  */
-export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object = { }> implements StorageDriver<TEntry> {
-    
+export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object = { }>
+    implements StorageDriver<TEntry>
+{
     private _emitter: Emitter = new Emitter();
     private _entries: { [ key: string]: TEntry } = { };
+
+    handle(name: string, callback: EventHandler): EventHandlerUninstaller {
+        return this._emitter.handle(name, callback);
+    }
+
+    on(name: string, callback: EventHandler): EmitterLike {
+        this._emitter.on(name, callback);
+        return this;
+    }
+
+    off(name: string, callback: EventHandler | null): EmitterLike {
+        this._emitter.off(name, callback);
+        return this;
+    }
 
     async fetch(id: string): Promise<TEntry|undefined> {
 
@@ -53,22 +72,22 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
         const id = typeof(input) === 'string' ? input : input.id;
         const entry = this._entries[id];
         delete this._entries[id];
-        this._emitter.trigger("delete", entry);
+        this._emitter.trigger<DeleteEventPayload<TEntry>>("delete", { entry });
     }
 
     async insertCollection(input: TEntry[]): Promise<void> {
         
-        input.forEach(entry => this.rawInsert(entry));
+        await Promise.all([...input.map(entry => this.rawInsert(entry))]);
     }
 
     async updateCollection(input: TEntry[]): Promise<void> {
         
-        input.forEach(entry => this.rawUpdate(entry));
+        await Promise.all([...input.map(entry => this.rawUpdate(entry))]);
     }
 
     async deleteCollection(input: TEntry[]|string[]): Promise<void> {
 
-        input.forEach(entry => this.delete(entry));
+        await Promise.all([...input.map(entry => this.delete(entry))]);
     }
 
     async dispose(): Promise<void> {
@@ -120,16 +139,25 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
     }
 
     private rawInsert(input: TEntry) {
+
+        // if the input is the same as the one that we have already stored,
+        // then it makes little sense to make an update. Nothing actually changed, right?
+        if (isEqual(input, this._entries[input.id])) return;
+
         this._entries[input.id] = {...input};
         
-        this._emitter.trigger("update", input);
+        this._emitter.trigger<UpdateEventPayload<TEntry>>("update", { entry: input });
     }
 
     private rawUpdate(input: TEntry) {
         const entry = this.get(input.id);
         const payload = entry ? { ...entry, ...input } : { ...input };
 
+        // if the input is the same as the one that we have already stored,
+        // then it makes little sense to make an update. Nothing actually changed, right?
+        if (isEqual(payload, this._entries[input.id])) return;
+
         this._entries[input.id] = payload;
-        this._emitter.trigger("update", payload);
+        this._emitter.trigger<UpdateEventPayload<TEntry>>("update", { entry: payload });
     }
 };

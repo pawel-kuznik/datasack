@@ -1,3 +1,4 @@
+import { EmitterLike } from "@pawel-kuznik/iventy";
 import { CollectionPotential } from "./CollectionPotential";
 import { Entry } from "./Entry";
 import { EntryPotential } from "./EntryPotential";
@@ -8,7 +9,7 @@ import { EntryPotential } from "./EntryPotential";
  *  implemented, but concrete enough that it can be used by the Sack class
  *  to fulfill all data needs. 
  */
-export interface StorageDriver<TEntry extends Entry = Entry, TFilter extends object = { }> {
+export interface StorageDriver<TEntry extends Entry = Entry, TFilter extends object = { }> extends EmitterLike {
 
     /**
      *  Fetch a copy of the entry stored in the storage driver.

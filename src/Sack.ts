@@ -7,11 +7,6 @@ import { CollectionPotential } from "./CollectionPotential";
 /**
  *  This is a class representing a certain group of data. The elements in the group should
  *  be objects.
- * 
- *  @event  update  This event rises when an entry was updated (or inserted) inside the sack.
- *                  The data will contain the whole entry.
- *  @event  remove  This event rises when an entry was removed from the sack. The data
- *                  will contain an id with the removed entry.
  */
 export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> {
 

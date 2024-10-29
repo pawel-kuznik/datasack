@@ -69,9 +69,11 @@ describe('ConvertingDriver', () => {
 
         entryPotential.on('update', event => {
 
-            expect(event.data instanceof Foo).toBeTruthy();
-            expect(event.data.id).toEqual("test-1");
-            expect(event.data.name).toEqual("name-1");
+            const entry = event.data.entry;
+
+            expect(entry instanceof Foo).toBeTruthy();
+            expect(entry.id).toEqual("test-1");
+            expect(entry.name).toEqual("name-1");
 
             done();
         });
@@ -90,7 +92,7 @@ describe('ConvertingDriver', () => {
 
         entryPotential.on('delete', event => {
 
-            expect(event.data.id).toEqual("test-1");
+            expect(event.data.entry.id).toEqual("test-1");
 
             done();
         });
@@ -111,9 +113,11 @@ describe('ConvertingDriver', () => {
 
         collectionPotential.on('update', event => {
 
-            expect(event.data instanceof Foo).toBeTruthy();
-            expect(event.data.id).toEqual("test-1");
-            expect(event.data.name).toEqual("name-1");
+            const entry = event.data.entry;
+
+            expect(entry instanceof Foo).toBeTruthy();
+            expect(entry.id).toEqual("test-1");
+            expect(entry.name).toEqual("name-1");
 
             done();
         });
@@ -132,9 +136,11 @@ describe('ConvertingDriver', () => {
 
         collectionPotential.on('update', event => {
 
-            expect(event.data instanceof Foo).toBeTruthy();
-            expect(event.data.id).toEqual("test-1");
-            expect(event.data.name).toEqual("name-1");
+            const entry = event.data.entry;
+
+            expect(entry instanceof Foo).toBeTruthy();
+            expect(entry.id).toEqual("test-1");
+            expect(entry.name).toEqual("name-1");
 
             done();
         });
@@ -156,7 +162,7 @@ describe('ConvertingDriver', () => {
 
         collectionPotential.on('delete', event => {
 
-            expect(event.data.id).toEqual("test-1");
+            expect(event.data.entry.id).toEqual("test-1");
 
             done();
         });

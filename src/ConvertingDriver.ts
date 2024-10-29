@@ -5,6 +5,9 @@ import { EntryPotential } from "./EntryPotential";
 import { ConvertingEntryPotential } from "./ConvertingEntryPotential";
 import { ConvertingCollectionPotential } from "./ConvertingCollectionPotential";
 import { EntryCache } from "./EntryCache";
+import { Emitter, EmitterLike, Event, EventHandler, EventHandlerUninstaller } from "@pawel-kuznik/iventy";
+import { UpdateEventPayload } from "./UpdateEventPayload";
+import { DeleteEventPayload } from "./DeleteEventPayload";
 
 /**
  *  This is a driver that can wrap over another driver to convert
@@ -20,12 +23,46 @@ import { EntryCache } from "./EntryCache";
 export abstract class ConvertingDriver<TEntry extends Entry = Entry, TData extends Entry = Entry, TFilter extends object = { }>
     implements StorageDriver<TEntry, TFilter>
 {
+    private _emitter: Emitter = new Emitter();
     private _cache: EntryCache<TEntry> | undefined;
     private _storage: StorageDriver<TData, TFilter>;
+
+    private _onUpdate = async (event: Event<UpdateEventPayload<TData>>) => {
+
+        if (this._cache) this._cache.invalidate(event.data.entry.id);
+
+        const entry = await this.obtain(event.data.entry);
+        this._emitter.trigger<UpdateEventPayload<TEntry>>("update", { entry });
+    };
+
+    private _onDelete = async (event: Event<DeleteEventPayload<TData>>) => {
+
+        const entry = await this.obtain(event.data.entry);
+
+        if (this._cache) this._cache.invalidate(event.data.entry.id);
+        this._emitter.trigger<DeleteEventPayload<TEntry>>("delete", { entry });
+    };
 
     constructor(storage: StorageDriver<TData, TFilter>, cache: EntryCache<TEntry> | undefined = undefined) {
         this._storage = storage;
         this._cache = cache;
+
+        this._storage.on("update", this._onUpdate);
+        this._storage.on("delete", this._onDelete);
+    }
+
+    handle(name: string, callback: EventHandler): EventHandlerUninstaller {
+        return this._emitter.handle(name, callback);
+    }
+
+    on(name: string, callback: EventHandler): EmitterLike {
+        this._emitter.on(name, callback);
+        return this;
+    }
+
+    off(name: string, callback: EventHandler | null): EmitterLike {
+        this._emitter.off(name, callback);
+        return this;
     }
 
     abstract wrap(input: TData) : Promise<TEntry>;
@@ -46,10 +83,17 @@ export abstract class ConvertingDriver<TEntry extends Entry = Entry, TData exten
     }
 
     async insert(input: TEntry): Promise<void> {
-
+        
         const data = await this.process(input);
         if (this._cache) this._cache.store(input);
-        return this._storage.insert(data);
+
+        // we will remove the update handler for the moment of the update cause
+        // we know which entry will be inserterd.  
+        this._storage.off("update", this._onUpdate);
+        await this._storage.insert(data);
+        this._storage.on("update", this._onUpdate);
+
+        this._emitter.trigger<UpdateEventPayload<TEntry>>("update", { entry: input });
     }
 
     async find(filter?: TFilter | undefined): Promise<TEntry[]> {
@@ -60,8 +104,15 @@ export abstract class ConvertingDriver<TEntry extends Entry = Entry, TData exten
     async update(input: TEntry): Promise<void> {
         
         const data = await this.process(input)
-        await this._storage.update(data);
         if (this._cache) this._cache.store(input);
+
+        // we will remove the update handler for the moment of the update cause
+        // we know which entry will be inserterd.  
+        this._storage.off("update", this._onUpdate);
+        await this._storage.update(data);
+        this._storage.on("update", this._onUpdate);
+
+        this._emitter.trigger<UpdateEventPayload<TEntry>>("update", { entry: input });
     }
 
     async delete(input: string | TEntry): Promise<void> {
@@ -74,21 +125,29 @@ export abstract class ConvertingDriver<TEntry extends Entry = Entry, TData exten
     async insertCollection(input: TEntry[]): Promise<void> {
     
         const data = await Promise.all([...input.map(entry => this.process(entry))]);
+        this._storage.off("update", this._onUpdate);
         await this._storage.insertCollection(data);
+        this._storage.on("update", this._onUpdate);
 
         if (this._cache) {
             input.forEach(e => this._cache?.store(e));
         }
+
+        input.forEach(entry => this._emitter.trigger<UpdateEventPayload<TEntry>>("update", { entry }));
     }
 
     async updateCollection(input: TEntry[]): Promise<void> {
         
         const data = await Promise.all([...input.map(entry => this.process(entry))]);
+        this._storage.off("update", this._onUpdate);
         await this._storage.updateCollection(data);
+        this._storage.on("update", this._onUpdate);
 
         if (this._cache) {
             input.forEach(e => this._cache?.store(e));
         }
+
+        input.forEach(entry => this._emitter.trigger<UpdateEventPayload<TEntry>>("update", { entry }));
     }
 
     async deleteCollection(input: string[] | TEntry[]): Promise<void> {
@@ -139,6 +198,9 @@ export abstract class ConvertingDriver<TEntry extends Entry = Entry, TData exten
     async dispose(): Promise<void> {
 
         if (this._cache) this._cache.clear();
+
+        this._storage.off("update", this._onUpdate);
+        this._storage.off("delete", this._onDelete);
 
         // @todo should the converting driver dispose of the passed driver?
         return this._storage.dispose();

@@ -1,7 +1,8 @@
-import { EventHandler, EmitterLike, Emitter } from "@pawel-kuznik/iventy";
-import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
+import { EventHandler, EmitterLike, Emitter, EventHandlerUninstaller, Event } from "@pawel-kuznik/iventy";
 import { CollectionPotential } from "./CollectionPotential";
 import { Entry } from "./Entry";
+import { UpdateEventPayload } from "./UpdateEventPayload";
+import { DeleteEventPayload } from "./DeleteEventPayload";
 
 /**
  *  This is an implementation of the collection potential for converting driver.
@@ -22,16 +23,16 @@ export class ConvertingCollectionPotential<TEntry extends Entry = Entry, TData e
         this._wrap = wrap;
         this._process = process;
 
-        this._collection.on('update', async event => {
+        this._collection.on('update', async (event: Event<UpdateEventPayload<TData>>) => {
 
-            const entry = await this._wrap(event.data);
-            this._emitter.trigger('update', entry);
+            const entry = await this._wrap(event.data.entry);
+            this._emitter.trigger<UpdateEventPayload<TEntry>>('update', { entry });
         });
 
-        this._collection.on('delete', async event => {
+        this._collection.on('delete', async (event: Event<DeleteEventPayload<TData>>) => {
 
-            const entry = await this._wrap(event.data);
-            this._emitter.trigger('delete', entry);
+            const entry = await this._wrap(event.data.entry);
+            this._emitter.trigger<DeleteEventPayload<TEntry>>('delete', { entry });
         });
     }
 

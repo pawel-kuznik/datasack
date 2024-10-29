@@ -1,5 +1,8 @@
+import { Event } from "@pawel-kuznik/iventy";
+import { DeleteEventPayload } from "./DeleteEventPayload";
 import { Entry } from "./Entry";
 import { MemoryDriver } from "./MemoryDriver";
+import { UpdateEventPayload } from "./UpdateEventPayload";
 
 describe("MemoryDriver", () => {
 
@@ -43,9 +46,9 @@ describe("MemoryDriver", () => {
         const driver = new MemoryDriver<Foo>();
         const entryPotential = driver.getEntryPotential("test");
 
-        entryPotential.on("update", event => {
+        entryPotential.on("update", (event: Event<UpdateEventPayload<Foo>>) => {
 
-            const data = event.data;
+            const data = event.data.entry;
 
             expect(data.id).toEqual("test")
             expect(data.name).toEqual("foo");
@@ -62,9 +65,9 @@ describe("MemoryDriver", () => {
         const driver = new MemoryDriver<Foo>();
         const entryPotential = driver.getEntryPotential("test");
 
-        entryPotential.on("delete", event => {
+        entryPotential.on("delete", (event: Event<DeleteEventPayload<Foo>>) => {
 
-            const id = event.data.id;
+            const id = event.data.entry.id;
 
             expect(id).toEqual("test");
             done();

@@ -1,7 +1,8 @@
-import { EventHandler, EmitterLike, Emitter } from "@pawel-kuznik/iventy";
-import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
+import { EventHandler, Event, EmitterLike, Emitter, EventHandlerUninstaller } from "@pawel-kuznik/iventy";
 import { CollectionPotential } from "./CollectionPotential";
 import { Entry } from "./Entry";
+import { UpdateEventPayload } from "./UpdateEventPayload";
+import { DeleteEventPayload } from "./DeleteEventPayload";
 
 export class MemoryCollectionPotential<TEntry extends Entry = Entry> implements CollectionPotential<TEntry> {
 
@@ -16,16 +17,16 @@ export class MemoryCollectionPotential<TEntry extends Entry = Entry> implements 
         this._outsideEmitter = emitter;
         this._emitter = new Emitter();
 
-        this._outsideEmitter.on('update', event => {
+        this._outsideEmitter.on('update', (event: Event<UpdateEventPayload<TEntry>>) => {
             
-            const data = event.data as TEntry;
-            if (this._match(data)) this._emitter.trigger("update", data);
+            const entry = event.data.entry;
+            if (this._match(entry)) this._emitter.trigger<UpdateEventPayload<TEntry>>("update", { entry });
         });
 
-        this._outsideEmitter.on('delete', event => {
+        this._outsideEmitter.on('delete', (event: Event<DeleteEventPayload<TEntry>>) => {
             
-            const data = event.data as TEntry;
-            if (this._match(data)) this._emitter.trigger("delete", data);
+            const entry = event.data.entry;
+            if (this._match(entry)) this._emitter.trigger<DeleteEventPayload<TEntry>>("delete", { entry });
         });
     }
 

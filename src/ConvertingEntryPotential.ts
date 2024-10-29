@@ -1,7 +1,8 @@
-import { EventHandler, EmitterLike, Emitter } from "@pawel-kuznik/iventy";
-import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
+import { EventHandler, EmitterLike, Emitter, EventHandlerUninstaller, Event } from "@pawel-kuznik/iventy";
 import { Entry } from "./Entry";
 import { EntryPotential } from "./EntryPotential";
+import { UpdateEventPayload } from "./UpdateEventPayload";
+import { DeleteEventPayload } from "./DeleteEventPayload";
 
 export class ConvertingEntryPotential<TEntry extends Entry = Entry, TData extends Entry = Entry> implements EntryPotential<TEntry> {
 
@@ -17,16 +18,16 @@ export class ConvertingEntryPotential<TEntry extends Entry = Entry, TData extend
         this._wrap = wrap;
         this._process = process;
 
-        this._entry.on('update', async event => {
+        this._entry.on('update', async (event: Event<UpdateEventPayload<TData>>) => {
 
-            const entry = await this._wrap(event.data);
-            this._emitter.trigger('update', entry);
+            const entry = await this._wrap(event.data.entry);
+            this._emitter.trigger<UpdateEventPayload<TEntry>>('update', { entry });
         });
 
-        this._entry.on('delete', async event => {
+        this._entry.on('delete', async (event: Event<DeleteEventPayload<TData>>) => {
 
-            const entry = await this._wrap(event.data);
-            this._emitter.trigger('delete', entry);
+            const entry = await this._wrap(event.data.entry);
+            this._emitter.trigger<DeleteEventPayload<TEntry>>('delete', { entry });
         });
     }
     
@@ -54,10 +55,12 @@ export class ConvertingEntryPotential<TEntry extends Entry = Entry, TData extend
     handle(name: string, callback: EventHandler): EventHandlerUninstaller {
         return this._emitter.handle(name, callback);
     }
+
     on(name: string, callback: EventHandler): EmitterLike {
         this._emitter.on(name, callback);
         return this;
     }
+
     off(name: string, callback: EventHandler | null): EmitterLike {
         this._emitter.off(name, callback);
         return this;
