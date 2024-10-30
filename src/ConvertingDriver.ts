@@ -206,13 +206,15 @@ export abstract class ConvertingDriver<TEntry extends Entry = Entry, TData exten
         return this._storage.dispose();
     }
 
-    private obtain(input: TData) : Promise<TEntry> {
+    private async obtain(input: TData) : Promise<TEntry> {
 
         if (this._cache) {
             const cached = this._cache.get(input.id);
             if (cached) return Promise.resolve(cached);
         }
 
-        return this.wrap(input);
+        const entity = await this.wrap(input);
+        this._cache?.store(entity);
+        return entity;
     }
 };
