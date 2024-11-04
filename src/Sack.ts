@@ -3,6 +3,7 @@ import { Entry } from "./Entry";
 import { StorageDriver } from "./StorageDriver";
 import { EntryPotential } from "./EntryPotential";
 import { CollectionPotential } from "./CollectionPotential";
+import { isEqual } from "lodash";
 
 /**
  *  This is a class representing a certain group of data. The elements in the group should
@@ -11,6 +12,9 @@ import { CollectionPotential } from "./CollectionPotential";
 export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> {
 
     private _storage: StorageDriver<TEntry>;
+
+    private _entryPotentials: Map<string, EntryPotential<TEntry>> = new Map();
+    private _collectionPotentials: Array<[TFilter|undefined, CollectionPotential<TEntry>]> = [];
 
     constructor(driver: StorageDriver<TEntry>) {
         this._storage = driver;
@@ -87,19 +91,48 @@ export class Sack<TEntry extends Entry = Entry, TFilter extends object = {}> {
         }
     }
 
+    /**
+     *  Delete a specific entry.
+     */
     async delete(input: TEntry|TEntry[]|string|string[]) {
 
         if (Array.isArray(input)) return this._storage.deleteCollection(input);
         else this._storage.delete(input);
     }
 
+    /**
+     *  Get a potential of a specific entry. The returned instance is stable. Meaning,
+     *  subsequent calls to this method with the same ID will yield the same potential
+     *  instance.
+     */
     getEntryPotential(id: string) : EntryPotential<TEntry> {
 
-        return this._storage.getEntryPotential(id);
+        // try to first find a cached potential.
+        const cached = this._entryPotentials.get(id);
+        if (cached) return cached;
+
+        // create a new potential and remember it in cache
+        const potential = this._storage.getEntryPotential(id); 
+        this._entryPotentials.set(id, potential);
+
+        return potential; 
     }
 
+    /**
+     *  Get a potential of a specific collection. The returned instance is stable. Meaning,
+     *  subsequent calls to this method with equal filter will yield the same potential
+     *  instance.
+     */
     getCollectionPotential(filter?: TFilter) : CollectionPotential<TEntry> {
-        
-        return this._storage.getCollectionPotential(filter);
+
+        // first try to find a cached collection potential that matches the passed filter
+        const cached = this._collectionPotentials.find(r => isEqual(r[0], filter));
+        if (cached) return cached[1];
+
+        // create a new potential and store it in the cache.
+        const potential = this._storage.getCollectionPotential(filter);
+        this._collectionPotentials.push([ filter, potential ]);
+
+        return potential;
     }
 };

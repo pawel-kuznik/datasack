@@ -11,6 +11,11 @@ import { Entry } from "./Entry";
 export interface EntryPotential<TEntry extends Entry = Entry> extends EmitterLike {
 
     /**
+     *  The id of the entry potential.
+     */
+    id : string;
+
+    /**
      *  Fetch the actual entry.
      */
     fetch() : Promise<TEntry|undefined>;

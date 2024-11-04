@@ -90,4 +90,28 @@ describe("Sack", () => {
         const fetched = await sack.fetch(payload.id);
         expect(fetched.name).toEqual("Test");
     });
+
+    it('should return a stable instance of an entry potential', () => {
+
+        const sack = new Sack(new MemoryDriver());
+
+        const potential1 = sack.getEntryPotential("test-1");
+        const potential2 = sack.getEntryPotential("test-1");
+        const potential3 = sack.getEntryPotential("test-2");
+
+        expect(potential1).toBe(potential2);
+        expect(potential3).not.toBe(potential1);
+    });
+
+    it('should return a stable instance of a collection potential', () => {
+
+        const sack = new Sack(new MemoryDriver());
+
+        const potential1 = sack.getCollectionPotential();
+        const potential2 = sack.getCollectionPotential();
+        const potential3 = sack.getCollectionPotential({ id: "12" });
+
+        expect(potential1).toBe(potential2);
+        expect(potential3).not.toBe(potential1);
+    });
 });

@@ -6,15 +6,20 @@ import { DeleteEventPayload } from "./DeleteEventPayload";
 
 export class MemoryEntryPotential<TEntry extends Entry = Entry> implements EntryPotential<TEntry> {
 
+    private _id: string;
+
     private _fetch: () => Promise<TEntry|undefined>;
     private _update: (update: TEntry) => Promise<void>;
     private _remove: () => Promise<void>;
     private _outsideEmitter: Emitter;
     private _emitter: Emitter = new Emitter();
     private _match: (entry: TEntry|string) => boolean;
+    
+    get id() { return this._id; }
 
-    constructor(fetch: () => Promise<TEntry|undefined>, update: (update:TEntry) => Promise<void>, remove: () =>Promise<void>, emitter: Emitter, match: (entry: TEntry|string) => boolean) {
+    constructor(id: string, fetch: () => Promise<TEntry|undefined>, update: (update:TEntry) => Promise<void>, remove: () =>Promise<void>, emitter: Emitter, match: (entry: TEntry|string) => boolean) {
 
+        this._id = id;
         this._fetch = fetch;
         this._update = update;
         this._remove = remove;

@@ -103,6 +103,7 @@ export class MemoryDriver<TEntry extends Entry = Entry, TFilter extends object =
 
     getEntryPotential(id: string): EntryPotential<TEntry> {
         return new MemoryEntryPotential(
+            id,
             () => this.fetch(id),
             (update: TEntry) => this.update(update),
             () => this.delete(id),

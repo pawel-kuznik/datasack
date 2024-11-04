@@ -13,6 +13,8 @@ export class ConvertingEntryPotential<TEntry extends Entry = Entry, TData extend
 
     private _emitter: Emitter = new Emitter();
 
+    get id () { return this._entry.id; }
+
     constructor(dataEntry: EntryPotential<TData>, wrap: (input: TData) => Promise<TEntry>, process: (input:TEntry) => Promise<TData>) {
         this._entry = dataEntry;
         this._wrap = wrap;
@@ -46,7 +48,7 @@ export class ConvertingEntryPotential<TEntry extends Entry = Entry, TData extend
     }
  
     /**
-     *  Detelet the entry.
+     *  Delete the entry.
      */
     delete() : Promise<void> {
         return this._entry.delete();
